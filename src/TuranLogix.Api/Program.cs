@@ -8,6 +8,8 @@ using TuranLogix.Api.Middleware;
 using TuranLogix.Application.Common.Interfaces;
 using TuranLogix.Application.Extensions;
 using TuranLogix.Infrastructure.Common;
+using TuranLogix.Infrastructure.Persistence;
+using TuranLogix.Infrastructure.Persistence.Seeders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +77,13 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<TuranLogixDbContext>();
+    var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+    await DatabaseSeeder.SeedAsync(context, hasher);
+}
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

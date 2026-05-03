@@ -6,21 +6,10 @@ public abstract class BaseEntity
     public DateTime CreatedAt { get; protected set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; protected set; }
 
-    private readonly List<object> _domainEvents = new();
-    public IReadOnlyCollection<object> DomainEvents => _domainEvents.AsReadOnly();
+    private readonly List<IDomainEvent> _domainEvents = new();
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
-    protected void RaiseDomainEvent(object domainEvent)
-    {
-        _domainEvents.Add(domainEvent);
-    }
-
-    public void ClearDomainEvents()
-    {
-        _domainEvents.Clear();
-    }
-
-    protected void SetUpdatedAt()
-    {
-        UpdatedAt = DateTime.UtcNow;
-    }
+    protected void RaiseDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
+    public void ClearDomainEvents() => _domainEvents.Clear();
+    protected void SetUpdatedAt() => UpdatedAt = DateTime.UtcNow;
 }

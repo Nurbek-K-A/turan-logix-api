@@ -48,11 +48,13 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
         var fileUrl = await _fileStorageService.UploadAsync(
             request.FileStream, request.FileName, request.ContentType, cancellationToken);
 
+        var fileHash = ComputeSha256(request.FileStream);
+
         var document = Document.Create(
             request.Title,
             request.Type,
             fileUrl,
-            null,
+            fileHash,
             request.OrderId,
             _currentUserService.UserId!.Value);
 
@@ -60,6 +62,14 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success(document.Id);
+    }
+
+    private static string ComputeSha256(Stream stream)
+    {
+        stream.Position = 0;
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        var hashBytes = sha256.ComputeHash(stream);
+        return Convert.ToHexString(hashBytes).ToLower();
     }
 }
 

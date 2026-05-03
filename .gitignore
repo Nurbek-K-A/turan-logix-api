@@ -15,8 +15,11 @@ artifacts/
 *.nupkg
 .nuget/
 
-## App settings with secrets (override in CI)
-# appsettings.*.json is tracked (no real secrets there)
+## Secrets
+appsettings.Local.json
+.env
+.env.*
+!.env.example
 
 ## OS
 .DS_Store

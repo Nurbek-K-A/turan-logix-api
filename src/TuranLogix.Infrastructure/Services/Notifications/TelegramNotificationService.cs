@@ -1,5 +1,8 @@
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MimeKit;
 using Telegram.Bot;
 using TuranLogix.Application.Common.Interfaces;
 using TuranLogix.Domain.Enums;
@@ -30,7 +33,7 @@ public class TelegramNotificationService : INotificationService
                 await SendTelegramAsync(recipient, message, cancellationToken);
                 break;
             case NotificationChannel.Email:
-                _logger.LogInformation("Email уведомление: {Recipient} — {Message}", recipient, message);
+                await SendEmailAsync(recipient, message, cancellationToken);
                 break;
             case NotificationChannel.WhatsApp:
                 _logger.LogInformation("WhatsApp уведомление (stub): {Recipient} — {Message}", recipient, message);
@@ -60,6 +63,39 @@ public class TelegramNotificationService : INotificationService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Ошибка при отправке Telegram уведомления в чат {ChatId}", chatId);
+        }
+    }
+
+    private async Task SendEmailAsync(string toEmail, string message, CancellationToken cancellationToken)
+    {
+        var smtpHost = _configuration["Email:SmtpHost"];
+        var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
+        var fromEmail = _configuration["Email:From"];
+        var password = _configuration["Email:Password"];
+
+        if (string.IsNullOrEmpty(smtpHost) || string.IsNullOrEmpty(fromEmail))
+        {
+            _logger.LogWarning("Email не настроен, уведомление пропущено");
+            return;
+        }
+
+        try
+        {
+            var email = new MimeMessage();
+            email.From.Add(MailboxAddress.Parse(fromEmail));
+            email.To.Add(MailboxAddress.Parse(toEmail));
+            email.Subject = "Уведомление TuranLogix";
+            email.Body = new TextPart("plain") { Text = message };
+
+            using var smtp = new SmtpClient();
+            await smtp.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls, cancellationToken);
+            await smtp.AuthenticateAsync(fromEmail, password, cancellationToken);
+            await smtp.SendAsync(email, cancellationToken);
+            await smtp.DisconnectAsync(true, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Ошибка при отправке Email на {ToEmail}", toEmail);
         }
     }
 }

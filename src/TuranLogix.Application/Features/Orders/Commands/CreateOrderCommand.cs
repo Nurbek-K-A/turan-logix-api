@@ -1,8 +1,11 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TuranLogix.Application.Common.Interfaces;
 using TuranLogix.Application.Common.Models;
+using TuranLogix.Application.Features.Orders.EventHandlers;
 using TuranLogix.Domain.Entities;
 using TuranLogix.Domain.Enums;
+using TuranLogix.Domain.Events;
 using TuranLogix.Domain.Interfaces;
 
 namespace TuranLogix.Application.Features.Orders.Commands;
@@ -23,17 +26,23 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IMapboxService _mapboxService;
+    private readonly IMediator _mediator;
+    private readonly ILogger<CreateOrderCommandHandler> _logger;
 
     public CreateOrderCommandHandler(
         IOrderRepository orderRepository,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IMapboxService mapboxService)
+        IMapboxService mapboxService,
+        IMediator mediator,
+        ILogger<CreateOrderCommandHandler> logger)
     {
         _orderRepository = orderRepository;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _mapboxService = mapboxService;
+        _mediator = mediator;
+        _logger = logger;
     }
 
     public async Task<Result<int>> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -50,14 +59,27 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             request.PickupDate,
             request.Comment);
 
-        var originCoords = await _mapboxService.GeocodeAsync(request.OriginCity, cancellationToken);
-        var destCoords = await _mapboxService.GeocodeAsync(request.DestinationCity, cancellationToken);
-        order.SetCoordinates(
-            originCoords?.Lat, originCoords?.Lng,
-            destCoords?.Lat, destCoords?.Lng);
+        try
+        {
+            var originCoords = await _mapboxService.GeocodeAsync(request.OriginCity, cancellationToken);
+            var destCoords = await _mapboxService.GeocodeAsync(request.DestinationCity, cancellationToken);
+            if (originCoords.HasValue && destCoords.HasValue)
+                order.SetCoordinates(originCoords.Value.Lat, originCoords.Value.Lng,
+                                     destCoords.Value.Lat, destCoords.Value.Lng);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Геокодинг недоступен для заявки {OrderNumber}, продолжаем без координат",
+                order.OrderNumber);
+        }
 
         await _orderRepository.AddAsync(order, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var domainEvents = order.DomainEvents.ToList();
+        order.ClearDomainEvents();
+        foreach (var evt in domainEvents.OfType<OrderCreatedEvent>())
+            await _mediator.Publish(new OrderCreatedNotification(evt), cancellationToken);
 
         return Result.Success(order.Id);
     }

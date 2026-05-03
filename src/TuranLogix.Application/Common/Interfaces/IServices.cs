@@ -5,7 +5,6 @@ namespace TuranLogix.Application.Common.Interfaces;
 public interface IJwtTokenService
 {
     string GenerateToken(int userId, string email, UserRole role);
-    int? GetUserIdFromToken(string token);
 }
 
 public interface IPasswordHasher
