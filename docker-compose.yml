@@ -1,0 +1,62 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=turanlogix_db;Username=postgres;Password=postgres
+      - Seq__Url=http://seq:5341
+    depends_on:
+      postgres:
+        condition: service_healthy
+      seq:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - turanlogix-net
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: turanlogix_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d turanlogix_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - turanlogix-net
+
+  seq:
+    image: datalust/seq:latest
+    ports:
+      - "5341:5341"
+      - "8081:80"
+    environment:
+      ACCEPT_EULA: Y
+    volumes:
+      - seq_data:/data
+    restart: unless-stopped
+    networks:
+      - turanlogix-net
+
+volumes:
+  postgres_data:
+  seq_data:
+
+networks:
+  turanlogix-net:
+    driver: bridge
