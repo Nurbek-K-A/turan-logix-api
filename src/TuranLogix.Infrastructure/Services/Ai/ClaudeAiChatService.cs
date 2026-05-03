@@ -4,7 +4,6 @@ using Anthropic.SDK.Messaging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using TuranLogix.Application.Common.Interfaces;
-using TuranLogix.Domain.Entities;
 using TuranLogix.Domain.Enums;
 using TuranLogix.Domain.Interfaces;
 
@@ -14,7 +13,6 @@ public class ClaudeAiChatService : IAiChatService
 {
     private readonly AnthropicClient _client;
     private readonly IChatMessageRepository _chatMessageRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ClaudeAiChatService> _logger;
 
     private const string SystemPrompt = """
@@ -37,12 +35,10 @@ public class ClaudeAiChatService : IAiChatService
     public ClaudeAiChatService(
         IConfiguration configuration,
         IChatMessageRepository chatMessageRepository,
-        IUnitOfWork unitOfWork,
         ILogger<ClaudeAiChatService> logger)
     {
         _client = new AnthropicClient(configuration["Anthropic:ApiKey"] ?? string.Empty);
         _chatMessageRepository = chatMessageRepository;
-        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -76,14 +72,7 @@ public class ClaudeAiChatService : IAiChatService
             };
 
             var response = await _client.Messages.GetClaudeMessageAsync(parameters, null, cancellationToken);
-            var replyText = response.Content.OfType<TextContent>().FirstOrDefault()?.Text ?? string.Empty;
-
-            var userMsg = ChatMessage.Create(sessionId, MessageRole.User, userMessage);
-            var assistantMsg = ChatMessage.Create(sessionId, MessageRole.Assistant, replyText);
-            await _chatMessageRepository.AddRangeAsync(new[] { userMsg, assistantMsg }, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return replyText;
+            return response.Content.OfType<TextContent>().FirstOrDefault()?.Text ?? string.Empty;
         }
         catch (Exception ex)
         {

@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using TuranLogix.Application.Features.Chat.Commands;
 
 namespace TuranLogix.Api.Controllers;
@@ -10,26 +12,48 @@ namespace TuranLogix.Api.Controllers;
 public class TelegramController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ITelegramBotClient _botClient;
     private readonly ILogger<TelegramController> _logger;
 
-    public TelegramController(IMediator mediator, ILogger<TelegramController> logger)
+    public TelegramController(IMediator mediator, ITelegramBotClient botClient, ILogger<TelegramController> logger)
     {
         _mediator = mediator;
+        _botClient = botClient;
         _logger = logger;
     }
 
     [HttpPost("webhook")]
     public async Task<IActionResult> Webhook([FromBody] Update update, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Получен Telegram Update: {UpdateId}", update.Id);
+        _logger.LogInformation("Telegram Update получен: {UpdateId}, тип: {Type}", update.Id, update.Type);
 
-        if (update.Message?.Text is not { } messageText || update.Message.Chat is not { } chat)
+        if (update.Type != UpdateType.Message || update.Message?.Text is not { } messageText)
             return Ok();
 
+        var chat = update.Message!.Chat;
         var sessionId = Math.Abs(chat.Id.GetHashCode());
 
-        var command = new SendChatMessageCommand(sessionId, messageText);
-        await _mediator.Send(command, cancellationToken);
+        try
+        {
+            var command = new SendChatMessageCommand(sessionId, messageText);
+            var result = await _mediator.Send(command, cancellationToken);
+
+            if (result.IsSuccess)
+            {
+                await _botClient.SendMessage(
+                    chatId: chat.Id,
+                    text: result.Value.Reply,
+                    cancellationToken: cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Ошибка обработки Telegram сообщения от {ChatId}", chat.Id);
+            await _botClient.SendMessage(
+                chatId: chat.Id,
+                text: "Извините, произошла ошибка. Попробуйте позже.",
+                cancellationToken: cancellationToken);
+        }
 
         return Ok();
     }

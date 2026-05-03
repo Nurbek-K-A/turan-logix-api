@@ -21,7 +21,9 @@ public record OrderSummaryDto(
     string DestinationCity,
     OrderStatus Status,
     CargoType CargoType,
+    string CargoDescription,
     decimal Weight,
+    decimal? Price,
     DateTime PickupDate,
     DateTime CreatedAt);
 
