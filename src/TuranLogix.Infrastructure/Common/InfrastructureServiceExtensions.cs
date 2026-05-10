@@ -5,6 +5,7 @@ using Telegram.Bot;
 using TuranLogix.Application.Common.Interfaces;
 using TuranLogix.Domain.Interfaces;
 using TuranLogix.Infrastructure.External.Mapbox;
+using TuranLogix.Infrastructure.Options;
 using TuranLogix.Infrastructure.Persistence;
 using TuranLogix.Infrastructure.Persistence.Repositories;
 using TuranLogix.Infrastructure.Services;
@@ -35,6 +36,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IAiChatService, ClaudeAiChatService>();
         services.AddScoped<INotificationService, NotificationService>();
 
+        // Telegram
         var botToken = configuration["Telegram:BotToken"] ?? string.Empty;
         if (!string.IsNullOrEmpty(botToken))
         {
@@ -44,6 +46,25 @@ public static class InfrastructureServiceExtensions
         {
             services.AddSingleton<ITelegramBotClient>(_ => new TelegramBotClient("0:placeholder"));
         }
+
+        // Bird (MessageBird) — SMS, WhatsApp, Verify
+        services.Configure<BirdOptions>(configuration.GetSection("Bird"));
+
+        var birdAccessKey = configuration["Bird:AccessKey"] ?? string.Empty;
+        var resolvedKey = !string.IsNullOrEmpty(birdAccessKey) ? birdAccessKey : "placeholder";
+        services.AddSingleton(_ => MessageBird.Client.CreateDefault(resolvedKey, null!));
+
+        services.AddSingleton<IMessageBirdAdapter, MessageBirdAdapter>();
+        services.AddScoped<IBirdVerifyService, BirdVerifyService>();
+        services.AddScoped<SmsSender>();
+        services.AddScoped<WhatsAppSender>();
+
+        services.AddHttpClient("Bird", client =>
+        {
+            client.BaseAddress = new Uri("https://conversations.messagebird.com");
+            if (!string.IsNullOrEmpty(birdAccessKey))
+                client.DefaultRequestHeaders.Add("Authorization", $"AccessKey {birdAccessKey}");
+        });
 
         services.AddHttpClient<IMapboxService, MapboxService>();
 
