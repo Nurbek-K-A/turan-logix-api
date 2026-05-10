@@ -113,6 +113,9 @@ public enum NotificationChannel
     /// <summary>Электронная почта</summary>
     Email = 2,
 
-    /// <summary>WhatsApp (заглушка)</summary>
-    WhatsApp = 3
+    /// <summary>WhatsApp via Bird (MessageBird) Conversations API</summary>
+    WhatsApp = 3,
+
+    /// <summary>SMS via Bird (MessageBird)</summary>
+    SMS = 4
 }

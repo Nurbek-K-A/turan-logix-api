@@ -10,25 +10,33 @@ using TuranLogix.Domain.Enums;
 namespace TuranLogix.Infrastructure.Services.Notifications;
 
 /// <summary>
-/// Отправляет уведомления через Telegram Bot API и SMTP Email
+/// Маршрутизирует уведомления по каналам: Telegram, Email, WhatsApp, SMS
 /// </summary>
 public class NotificationService : INotificationService
 {
     private readonly ITelegramBotClient _botClient;
     private readonly IConfiguration _configuration;
     private readonly ILogger<NotificationService> _logger;
+    private readonly SmsSender _smsSender;
+    private readonly WhatsAppSender _whatsAppSender;
 
     /// <param name="botClient">Telegram Bot клиент</param>
     /// <param name="configuration">Конфигурация (Telegram:ManagerChatId, Email:*)</param>
     /// <param name="logger">Логгер</param>
+    /// <param name="smsSender">Сервис отправки SMS через Bird</param>
+    /// <param name="whatsAppSender">Сервис отправки WhatsApp через Bird</param>
     public NotificationService(
         ITelegramBotClient botClient,
         IConfiguration configuration,
-        ILogger<NotificationService> logger)
+        ILogger<NotificationService> logger,
+        SmsSender smsSender,
+        WhatsAppSender whatsAppSender)
     {
         _botClient = botClient;
         _configuration = configuration;
         _logger = logger;
+        _smsSender = smsSender;
+        _whatsAppSender = whatsAppSender;
     }
 
     /// <inheritdoc/>
@@ -43,7 +51,10 @@ public class NotificationService : INotificationService
                 await SendEmailAsync(recipient, message, cancellationToken);
                 break;
             case NotificationChannel.WhatsApp:
-                _logger.LogInformation("WhatsApp уведомление (stub): {Recipient} — {Message}", recipient, message);
+                await _whatsAppSender.SendAsync(recipient, message, cancellationToken);
+                break;
+            case NotificationChannel.SMS:
+                await _smsSender.SendAsync(recipient, message, cancellationToken);
                 break;
         }
     }

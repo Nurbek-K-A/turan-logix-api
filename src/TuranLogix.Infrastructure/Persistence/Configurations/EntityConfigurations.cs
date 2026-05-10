@@ -19,6 +19,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.CompanyName).HasMaxLength(300);
         builder.Property(u => u.Bin).HasMaxLength(12);
         builder.Property(u => u.TelegramChatId).HasMaxLength(50);
+        builder.Property(u => u.IsPhoneVerified).HasDefaultValue(false);
 
         builder.HasIndex(u => u.Email).IsUnique();
 

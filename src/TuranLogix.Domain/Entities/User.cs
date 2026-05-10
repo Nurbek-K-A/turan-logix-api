@@ -36,6 +36,9 @@ public sealed class User : BaseEntity
     /// <summary>Признак верификации аккаунта администратором</summary>
     public bool IsVerified { get; private set; }
 
+    /// <summary>Признак подтверждения номера телефона через OTP</summary>
+    public bool IsPhoneVerified { get; private set; }
+
     /// <summary>Telegram chat_id для отправки уведомлений</summary>
     public string? TelegramChatId { get; private set; }
 
@@ -79,6 +82,15 @@ public sealed class User : BaseEntity
     /// Верифицировать аккаунт пользователя
     /// </summary>
     public void Verify() => IsVerified = true;
+
+    /// <summary>
+    /// Отметить номер телефона как подтверждённый через OTP
+    /// </summary>
+    public void MarkPhoneVerified()
+    {
+        IsPhoneVerified = true;
+        SetUpdatedAt();
+    }
 
     /// <summary>
     /// Привязать Telegram-аккаунт к профилю

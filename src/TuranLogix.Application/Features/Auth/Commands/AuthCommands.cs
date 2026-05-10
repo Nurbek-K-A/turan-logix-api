@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TuranLogix.Application.Common.Interfaces;
 using TuranLogix.Application.Common.Models;
 using TuranLogix.Application.DTOs.Auth;
@@ -27,19 +28,32 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Re
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IBirdVerifyService _verifyService;
+    private readonly ILogger<RegisterCommandHandler> _logger;
 
     /// <param name="userRepository">Репозиторий пользователей</param>
     /// <param name="unitOfWork">Единица работы</param>
     /// <param name="passwordHasher">Сервис хэширования паролей</param>
-    public RegisterCommandHandler(IUserRepository userRepository, IUnitOfWork unitOfWork, IPasswordHasher passwordHasher)
+    /// <param name="verifyService">Сервис OTP-верификации телефона</param>
+    /// <param name="logger">Логгер</param>
+    public RegisterCommandHandler(
+        IUserRepository userRepository,
+        IUnitOfWork unitOfWork,
+        IPasswordHasher passwordHasher,
+        IBirdVerifyService verifyService,
+        ILogger<RegisterCommandHandler> logger)
     {
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
         _passwordHasher = passwordHasher;
+        _verifyService = verifyService;
+        _logger = logger;
     }
 
     /// <summary>
-    /// Зарегистрировать пользователя и сохранить в БД
+    /// Зарегистрировать пользователя и инициировать OTP-верификацию телефона.
+    /// Телефон помечается как неверифицированный (IsPhoneVerified = false).
+    /// Если отправка OTP не удалась — регистрация не блокируется.
     /// </summary>
     /// <param name="request">Данные регистрации</param>
     /// <param name="cancellationToken">Токен отмены</param>
@@ -56,6 +70,16 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Re
 
         await _userRepository.AddAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _verifyService.SendOtpAsync(request.PhoneNumber, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Не удалось отправить OTP на {PhoneNumber} после регистрации пользователя {UserId}. Верификация телефона отложена.",
+                request.PhoneNumber, user.Id);
+        }
 
         return Result.Success(new RegisterResponse(user.Id));
     }

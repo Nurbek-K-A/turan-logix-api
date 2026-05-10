@@ -39,6 +39,21 @@ public static class DomainErrors
     }
 
     /// <summary>
+    /// Ошибки OTP-верификации телефона
+    /// </summary>
+    public static class Phone
+    {
+        /// <summary>Неверный формат номера телефона (ожидается E.164)</summary>
+        public static readonly Error InvalidFormat = new("Phone.InvalidFormat", "Неверный формат номера телефона. Используйте формат E.164, например: +77001234567");
+
+        /// <summary>Не удалось отправить OTP-код</summary>
+        public static readonly Error OtpSendFailed = new("Phone.OtpSendFailed", "Не удалось отправить код подтверждения");
+
+        /// <summary>Верификация OTP не удалась (неверный или истёкший код)</summary>
+        public static readonly Error OtpVerificationFailed = new("Phone.OtpVerificationFailed", "Код подтверждения неверен или истёк");
+    }
+
+    /// <summary>
     /// Ошибки агрегата <c>Document</c>
     /// </summary>
     public static class Document
