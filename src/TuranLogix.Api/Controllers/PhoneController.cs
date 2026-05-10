@@ -28,20 +28,24 @@ public class PhoneController : ControllerBase
     }
 
     /// <summary>
-    /// Отправить OTP-код на номер телефона
+    /// Отправить OTP-код на номер телефона из профиля текущего пользователя
     /// </summary>
-    /// <param name="request">Номер телефона в формате E.164</param>
     /// <param name="cancellationToken">Токен отмены</param>
     /// <returns>Идентификатор верификации для последующего подтверждения</returns>
     [HttpPost("send-otp")]
     [SwaggerOperation(
         Summary = "Отправить OTP-код",
-        Description = "Инициирует отправку SMS с OTP-кодом. Возвращает verifyId, необходимый для confirm-otp.")]
+        Description = "Инициирует отправку SMS с OTP-кодом на номер из профиля пользователя. Возвращает verifyId, необходимый для confirm-otp.")]
     [ProducesResponseType(typeof(SendOtpResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> SendOtp(CancellationToken cancellationToken)
     {
-        var command = new SendPhoneOtpCommand(request.PhoneNumber);
+        var userId = _currentUser.UserId;
+        if (userId is null)
+            return Unauthorized();
+
+        var command = new SendPhoneOtpCommand(userId.Value);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)

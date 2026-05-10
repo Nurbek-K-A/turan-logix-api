@@ -42,6 +42,15 @@ public sealed class User : BaseEntity
     /// <summary>Telegram chat_id для отправки уведомлений</summary>
     public string? TelegramChatId { get; private set; }
 
+    /// <summary>Идентификатор ожидающей OTP-верификации (verifyId из Bird)</summary>
+    public string? PendingVerifyId { get; private set; }
+
+    /// <summary>Номер телефона, на который был отправлен OTP</summary>
+    public string? PendingVerifyPhone { get; private set; }
+
+    /// <summary>Время истечения текущей OTP-сессии (UTC)</summary>
+    public DateTime? PendingVerifyExpiresAt { get; private set; }
+
     /// <summary>Заявки пользователя</summary>
     public IReadOnlyCollection<Order> Orders => _orders.AsReadOnly();
 
@@ -103,7 +112,31 @@ public sealed class User : BaseEntity
     }
 
     /// <summary>
-    /// Обновить редактируемые поля профиля
+    /// Сохранить состояние ожидающей OTP-верификации
+    /// </summary>
+    /// <param name="verifyId">Идентификатор верификации из Bird</param>
+    /// <param name="phone">Номер телефона, на который отправлен OTP</param>
+    /// <param name="timeoutSeconds">Время жизни OTP в секундах</param>
+    public void SetPendingVerification(string verifyId, string phone, int timeoutSeconds)
+    {
+        PendingVerifyId = verifyId;
+        PendingVerifyPhone = phone;
+        PendingVerifyExpiresAt = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+    }
+
+    /// <summary>
+    /// Очистить состояние ожидающей верификации (после успеха или смены номера)
+    /// </summary>
+    public void ClearPendingVerification()
+    {
+        PendingVerifyId = null;
+        PendingVerifyPhone = null;
+        PendingVerifyExpiresAt = null;
+    }
+
+    /// <summary>
+    /// Обновить редактируемые поля профиля.
+    /// При смене номера телефона сбрасывает IsPhoneVerified и очищает ожидающую верификацию.
     /// </summary>
     /// <param name="fullName">Полное имя</param>
     /// <param name="phoneNumber">Номер телефона</param>
@@ -112,7 +145,12 @@ public sealed class User : BaseEntity
     public void Update(string fullName, string phoneNumber, string? companyName, string? bin)
     {
         FullName = fullName;
-        PhoneNumber = phoneNumber;
+        if (PhoneNumber != phoneNumber)
+        {
+            PhoneNumber = phoneNumber;
+            IsPhoneVerified = false;
+            ClearPendingVerification();
+        }
         CompanyName = companyName;
         Bin = bin;
         SetUpdatedAt();

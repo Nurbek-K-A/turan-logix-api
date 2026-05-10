@@ -3,6 +3,12 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace TuranLogix.Application.DTOs.Profile;
 
 /// <summary>
+/// Ответ на обновление профиля пользователя
+/// </summary>
+public record UpdateProfileResponse(
+    [SwaggerSchema("true — номер телефона был изменён и требует повторной OTP-верификации")] bool PhoneVerificationRequired);
+
+/// <summary>
 /// Профиль пользователя
 /// </summary>
 public record UserProfileDto(

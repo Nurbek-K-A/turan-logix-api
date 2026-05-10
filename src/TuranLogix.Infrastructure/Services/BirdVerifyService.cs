@@ -24,6 +24,9 @@ public class BirdVerifyService : IBirdVerifyService
         _logger = logger;
     }
 
+    /// <inheritdoc />
+    public int TimeoutSeconds => _verifyOptions.TimeoutSeconds;
+
     /// <summary>
     /// Инициировать OTP-верификацию и получить verifyId
     /// </summary>
