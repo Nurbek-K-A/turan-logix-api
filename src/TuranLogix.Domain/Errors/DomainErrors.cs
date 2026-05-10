@@ -51,6 +51,18 @@ public static class DomainErrors
 
         /// <summary>Верификация OTP не удалась (неверный или истёкший код)</summary>
         public static readonly Error OtpVerificationFailed = new("Phone.OtpVerificationFailed", "Код подтверждения неверен или истёк");
+
+        /// <summary>Номер телефона не указан в профиле пользователя</summary>
+        public static readonly Error PhoneNotSet = new("Phone.PhoneNotSet", "Номер телефона не указан в профиле");
+
+        /// <summary>verifyId команды не совпадает с сохранённым — недействительная сессия</summary>
+        public static readonly Error InvalidVerifySession = new("Phone.InvalidVerifySession", "Недействительная сессия верификации");
+
+        /// <summary>Номер телефона был изменён после отправки OTP</summary>
+        public static readonly Error PhoneChangedAfterOtp = new("Phone.PhoneChangedAfterOtp", "Номер телефона был изменён после отправки OTP");
+
+        /// <summary>Время действия OTP-сессии истекло</summary>
+        public static readonly Error OtpSessionExpired = new("Phone.OtpSessionExpired", "Сессия OTP истекла");
     }
 
     /// <summary>

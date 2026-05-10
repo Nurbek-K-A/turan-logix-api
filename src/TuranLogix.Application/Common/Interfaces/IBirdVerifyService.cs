@@ -5,6 +5,9 @@ namespace TuranLogix.Application.Common.Interfaces;
 /// </summary>
 public interface IBirdVerifyService
 {
+    /// <summary>Время жизни OTP-кода в секундах (из конфигурации)</summary>
+    int TimeoutSeconds { get; }
+
     /// <summary>
     /// Инициировать отправку OTP-кода на номер телефона
     /// </summary>

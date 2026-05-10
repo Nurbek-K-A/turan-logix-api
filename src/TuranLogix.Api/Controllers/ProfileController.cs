@@ -41,14 +41,15 @@ public class ProfileController : ControllerBase
     /// </summary>
     /// <param name="command">Новые данные профиля</param>
     /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Флаг phoneVerificationRequired = true если номер телефона был изменён</returns>
     [HttpPut]
-    [SwaggerOperation(Summary = "Обновить профиль", Description = "Обновляет FullName, PhoneNumber, CompanyName и BIN пользователя")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [SwaggerOperation(Summary = "Обновить профиль", Description = "Обновляет FullName, PhoneNumber, CompanyName и BIN пользователя. Если номер телефона изменён — возвращает phoneVerificationRequired: true.")]
+    [ProducesResponseType(typeof(Application.DTOs.Profile.UpdateProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
-        return result.IsSuccess ? NoContent() : BadRequest(result.Error);
+        return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
     }
 }

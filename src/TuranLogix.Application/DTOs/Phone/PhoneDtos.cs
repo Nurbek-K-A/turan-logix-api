@@ -4,12 +4,6 @@ using Swashbuckle.AspNetCore.Annotations;
 namespace TuranLogix.Application.DTOs.Phone;
 
 /// <summary>
-/// Запрос на отправку OTP-кода на номер телефона
-/// </summary>
-public record SendOtpRequest(
-    [Required][SwaggerSchema("Номер телефона в формате E.164, например +77001234567")] string PhoneNumber);
-
-/// <summary>
 /// Ответ на успешную отправку OTP-кода
 /// </summary>
 public record SendOtpResponse(
@@ -26,4 +20,4 @@ public record ConfirmOtpRequest(
 /// Ответ на подтверждение OTP-кода
 /// </summary>
 public record ConfirmOtpResponse(
-    [SwaggerSchema("true — телефон успешно подтверждён; false — код неверен или истёк")] bool Success);
+    [SwaggerSchema("true — телефон успешно подтверждён")] bool Success);
