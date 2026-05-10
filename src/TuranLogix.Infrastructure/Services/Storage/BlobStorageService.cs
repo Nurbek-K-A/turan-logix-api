@@ -6,11 +6,16 @@ using TuranLogix.Application.Common.Interfaces;
 
 namespace TuranLogix.Infrastructure.Services.Storage;
 
+/// <summary>
+/// Хранилище файлов на базе Azure Blob Storage
+/// </summary>
 public class BlobStorageService : IFileStorageService
 {
     private readonly BlobContainerClient _containerClient;
     private readonly ILogger<BlobStorageService> _logger;
 
+    /// <param name="configuration">Конфигурация (AzureStorage:ConnectionString, AzureStorage:ContainerName)</param>
+    /// <param name="logger">Логгер</param>
     public BlobStorageService(IConfiguration configuration, ILogger<BlobStorageService> logger)
     {
         _logger = logger;
@@ -28,6 +33,8 @@ public class BlobStorageService : IFileStorageService
         }
     }
 
+    /// <inheritdoc/>
+    /// <remarks>Blob-имя формируется как yyyyMMdd/GUID_filename для удобства группировки</remarks>
     public async Task<string> UploadAsync(Stream fileStream, string fileName, string contentType, CancellationToken cancellationToken = default)
     {
         try
@@ -47,6 +54,7 @@ public class BlobStorageService : IFileStorageService
         }
     }
 
+    /// <inheritdoc/>
     public async Task DeleteAsync(string fileUrl, CancellationToken cancellationToken = default)
     {
         try

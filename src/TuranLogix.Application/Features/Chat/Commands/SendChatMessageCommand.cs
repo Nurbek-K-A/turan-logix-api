@@ -8,8 +8,14 @@ using TuranLogix.Domain.Interfaces;
 
 namespace TuranLogix.Application.Features.Chat.Commands;
 
+/// <summary>
+/// Команда отправки сообщения AI-ассистенту
+/// </summary>
 public record SendChatMessageCommand(int? SessionId, string Message) : IRequest<Result<ChatMessageResponse>>;
 
+/// <summary>
+/// Обработчик команды <see cref="SendChatMessageCommand"/>
+/// </summary>
 public class SendChatMessageCommandHandler : IRequestHandler<SendChatMessageCommand, Result<ChatMessageResponse>>
 {
     private readonly IAiChatService _aiChatService;
@@ -17,6 +23,10 @@ public class SendChatMessageCommandHandler : IRequestHandler<SendChatMessageComm
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
 
+    /// <param name="aiChatService">AI-сервис (Claude)</param>
+    /// <param name="chatMessageRepository">Репозиторий сообщений чата</param>
+    /// <param name="unitOfWork">Единица работы</param>
+    /// <param name="currentUserService">Сервис текущего пользователя</param>
     public SendChatMessageCommandHandler(
         IAiChatService aiChatService,
         IChatMessageRepository chatMessageRepository,
@@ -29,6 +39,12 @@ public class SendChatMessageCommandHandler : IRequestHandler<SendChatMessageComm
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    /// Отправить сообщение AI, сохранить диалог и вернуть ответ
+    /// </summary>
+    /// <param name="request">SessionId и текст сообщения</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Id сессии и ответ AI-ассистента</returns>
     public async Task<Result<ChatMessageResponse>> Handle(SendChatMessageCommand request, CancellationToken cancellationToken)
     {
         var sessionId = request.SessionId ?? Math.Abs((_currentUserService.UserId ?? 0).GetHashCode() ^ DateTime.UtcNow.Ticks.GetHashCode());

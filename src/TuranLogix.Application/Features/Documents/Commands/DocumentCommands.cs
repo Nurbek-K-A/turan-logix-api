@@ -9,6 +9,9 @@ using TuranLogix.Domain.Interfaces;
 
 namespace TuranLogix.Application.Features.Documents.Commands;
 
+/// <summary>
+/// Команда загрузки документа к заявке
+/// </summary>
 public record UploadDocumentCommand(
     int OrderId,
     string Title,
@@ -17,6 +20,9 @@ public record UploadDocumentCommand(
     string FileName,
     string ContentType) : IRequest<Result<int>>;
 
+/// <summary>
+/// Обработчик команды <see cref="UploadDocumentCommand"/>
+/// </summary>
 public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentCommand, Result<int>>
 {
     private readonly IDocumentRepository _documentRepository;
@@ -25,6 +31,11 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
     private readonly IFileStorageService _fileStorageService;
     private readonly ICurrentUserService _currentUserService;
 
+    /// <param name="documentRepository">Репозиторий документов</param>
+    /// <param name="orderRepository">Репозиторий заявок</param>
+    /// <param name="unitOfWork">Единица работы</param>
+    /// <param name="fileStorageService">Сервис хранения файлов</param>
+    /// <param name="currentUserService">Сервис текущего пользователя</param>
     public UploadDocumentCommandHandler(
         IDocumentRepository documentRepository,
         IOrderRepository orderRepository,
@@ -39,6 +50,12 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    /// Загрузить файл в хранилище, вычислить SHA-256 и сохранить документ
+    /// </summary>
+    /// <param name="request">Данные документа</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Id созданного документа или ошибка Order.NotFound</returns>
     public async Task<Result<int>> Handle(UploadDocumentCommand request, CancellationToken cancellationToken)
     {
         var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
@@ -64,6 +81,11 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
         return Result.Success(document.Id);
     }
 
+    /// <summary>
+    /// Вычислить SHA-256 хэш потока файла
+    /// </summary>
+    /// <param name="stream">Поток файла (позиция сбрасывается в 0)</param>
+    /// <returns>Hex-строка хэша в нижнем регистре</returns>
     private static string ComputeSha256(Stream stream)
     {
         stream.Position = 0;
@@ -73,14 +95,23 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
     }
 }
 
+/// <summary>
+/// Команда подписания документа ЭЦП через NCALayer
+/// </summary>
 public record SignDocumentCommand(int DocumentId, string Certificate) : IRequest<Result>;
 
+/// <summary>
+/// Обработчик команды <see cref="SignDocumentCommand"/>
+/// </summary>
 public class SignDocumentCommandHandler : IRequestHandler<SignDocumentCommand, Result>
 {
     private readonly IDocumentRepository _documentRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ISignatureService _signatureService;
 
+    /// <param name="documentRepository">Репозиторий документов</param>
+    /// <param name="unitOfWork">Единица работы</param>
+    /// <param name="signatureService">Сервис ЭЦП-подписи</param>
     public SignDocumentCommandHandler(
         IDocumentRepository documentRepository,
         IUnitOfWork unitOfWork,
@@ -91,6 +122,12 @@ public class SignDocumentCommandHandler : IRequestHandler<SignDocumentCommand, R
         _signatureService = signatureService;
     }
 
+    /// <summary>
+    /// Подписать документ и сохранить CMS-данные подписи
+    /// </summary>
+    /// <param name="request">Id документа и сертификат ЭЦП</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Успех или ошибка Document.NotFound / Document.AlreadySigned</returns>
     public async Task<Result> Handle(SignDocumentCommand request, CancellationToken cancellationToken)
     {
         var document = await _documentRepository.GetByIdAsync(request.DocumentId, cancellationToken);
@@ -111,19 +148,33 @@ public class SignDocumentCommandHandler : IRequestHandler<SignDocumentCommand, R
     }
 }
 
+/// <summary>
+/// Запрос списка документов по Id заявки
+/// </summary>
 public record GetDocumentsByOrderQuery(int OrderId) : IRequest<Result<IReadOnlyList<DocumentDto>>>;
 
+/// <summary>
+/// Обработчик запроса <see cref="GetDocumentsByOrderQuery"/>
+/// </summary>
 public class GetDocumentsByOrderQueryHandler : IRequestHandler<GetDocumentsByOrderQuery, Result<IReadOnlyList<DocumentDto>>>
 {
     private readonly IDocumentRepository _documentRepository;
     private readonly IOrderRepository _orderRepository;
 
+    /// <param name="documentRepository">Репозиторий документов</param>
+    /// <param name="orderRepository">Репозиторий заявок</param>
     public GetDocumentsByOrderQueryHandler(IDocumentRepository documentRepository, IOrderRepository orderRepository)
     {
         _documentRepository = documentRepository;
         _orderRepository = orderRepository;
     }
 
+    /// <summary>
+    /// Получить все документы заявки
+    /// </summary>
+    /// <param name="request">Id заявки</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Список документов или ошибка Order.NotFound</returns>
     public async Task<Result<IReadOnlyList<DocumentDto>>> Handle(GetDocumentsByOrderQuery request, CancellationToken cancellationToken)
     {
         var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);

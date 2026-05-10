@@ -4,17 +4,26 @@ using FluentValidation;
 
 namespace TuranLogix.Api.Middleware;
 
+/// <summary>
+/// Middleware глобальной обработки исключений — перехватывает ошибки валидации и непредвиденные исключения
+/// </summary>
 public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
+    /// <param name="next">Следующий middleware в pipeline</param>
+    /// <param name="logger">Логгер</param>
     public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
     {
         _next = next;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Обработать запрос с перехватом исключений
+    /// </summary>
+    /// <param name="context">HTTP-контекст</param>
     public async Task InvokeAsync(HttpContext context)
     {
         try

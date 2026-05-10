@@ -5,12 +5,18 @@ using TuranLogix.Application.Common.Interfaces;
 
 namespace TuranLogix.Infrastructure.External.Mapbox;
 
+/// <summary>
+/// Геокодирование городов и расчёт расстояний через Mapbox Geocoding API
+/// </summary>
 public class MapboxService : IMapboxService
 {
     private readonly HttpClient _httpClient;
     private readonly string _accessToken;
     private readonly ILogger<MapboxService> _logger;
 
+    /// <param name="httpClient">HTTP-клиент (регистрируется через IHttpClientFactory)</param>
+    /// <param name="configuration">Конфигурация (Mapbox:AccessToken)</param>
+    /// <param name="logger">Логгер</param>
     public MapboxService(HttpClient httpClient, IConfiguration configuration, ILogger<MapboxService> logger)
     {
         _httpClient = httpClient;
@@ -18,6 +24,8 @@ public class MapboxService : IMapboxService
         _logger = logger;
     }
 
+    /// <inheritdoc/>
+    /// <remarks>Возвращает null, если AccessToken не задан или город не найден</remarks>
     public async Task<(double Lat, double Lng)?> GeocodeAsync(string city, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(_accessToken))
@@ -48,6 +56,7 @@ public class MapboxService : IMapboxService
         }
     }
 
+    /// <inheritdoc/>
     public double CalculateDistance(double lat1, double lng1, double lat2, double lng2)
     {
         const double earthRadiusKm = 6371.0;
@@ -62,5 +71,8 @@ public class MapboxService : IMapboxService
         return earthRadiusKm * c;
     }
 
+    /// <summary>
+    /// Перевести градусы в радианы
+    /// </summary>
     private static double ToRadians(double degrees) => degrees * Math.PI / 180;
 }

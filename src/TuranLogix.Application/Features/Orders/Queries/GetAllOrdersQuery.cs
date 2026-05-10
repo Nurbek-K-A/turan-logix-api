@@ -7,19 +7,33 @@ using TuranLogix.Domain.Interfaces;
 
 namespace TuranLogix.Application.Features.Orders.Queries;
 
+/// <summary>
+/// Запрос всех заявок системы с опциональной фильтрацией по статусу (для администраторов и менеджеров)
+/// </summary>
 public record GetAllOrdersQuery(OrderStatus? Status = null) : IRequest<Result<IReadOnlyList<OrderSummaryDto>>>;
 
+/// <summary>
+/// Обработчик запроса <see cref="GetAllOrdersQuery"/>
+/// </summary>
 public class GetAllOrdersQueryHandler : IRequestHandler<GetAllOrdersQuery, Result<IReadOnlyList<OrderSummaryDto>>>
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IMapper _mapper;
 
+    /// <param name="orderRepository">Репозиторий заявок</param>
+    /// <param name="mapper">AutoMapper</param>
     public GetAllOrdersQueryHandler(IOrderRepository orderRepository, IMapper mapper)
     {
         _orderRepository = orderRepository;
         _mapper = mapper;
     }
 
+    /// <summary>
+    /// Получить все заявки, отфильтрованные по статусу
+    /// </summary>
+    /// <param name="request">Фильтр по статусу (null — все заявки)</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Список кратких представлений заявок</returns>
     public async Task<Result<IReadOnlyList<OrderSummaryDto>>> Handle(GetAllOrdersQuery request, CancellationToken cancellationToken)
     {
         var orders = await _orderRepository.GetAllAsync(cancellationToken);

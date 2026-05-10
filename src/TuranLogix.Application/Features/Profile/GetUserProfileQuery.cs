@@ -7,19 +7,33 @@ using TuranLogix.Domain.Interfaces;
 
 namespace TuranLogix.Application.Features.Profile;
 
+/// <summary>
+/// Запрос профиля текущего аутентифицированного пользователя
+/// </summary>
 public record GetUserProfileQuery : IRequest<Result<UserProfileDto>>;
 
+/// <summary>
+/// Обработчик запроса <see cref="GetUserProfileQuery"/>
+/// </summary>
 public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, Result<UserProfileDto>>
 {
     private readonly IUserRepository _userRepository;
     private readonly ICurrentUserService _currentUserService;
 
+    /// <param name="userRepository">Репозиторий пользователей</param>
+    /// <param name="currentUserService">Сервис текущего пользователя</param>
     public GetUserProfileQueryHandler(IUserRepository userRepository, ICurrentUserService currentUserService)
     {
         _userRepository = userRepository;
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    /// Получить профиль текущего пользователя
+    /// </summary>
+    /// <param name="request">Пустой запрос</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Профиль пользователя или ошибка User.NotFound</returns>
     public async Task<Result<UserProfileDto>> Handle(GetUserProfileQuery request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId!.Value;
