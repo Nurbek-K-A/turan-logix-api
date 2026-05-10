@@ -8,6 +8,9 @@ using TuranLogix.Domain.Interfaces;
 
 namespace TuranLogix.Application.Features.Auth.Commands;
 
+/// <summary>
+/// Команда регистрации нового пользователя
+/// </summary>
 public record RegisterCommand(
     string FullName,
     string Email,
@@ -16,12 +19,18 @@ public record RegisterCommand(
     string? CompanyName,
     string? Bin) : IRequest<Result<RegisterResponse>>;
 
+/// <summary>
+/// Обработчик команды <see cref="RegisterCommand"/>
+/// </summary>
 public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<RegisterResponse>>
 {
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher _passwordHasher;
 
+    /// <param name="userRepository">Репозиторий пользователей</param>
+    /// <param name="unitOfWork">Единица работы</param>
+    /// <param name="passwordHasher">Сервис хэширования паролей</param>
     public RegisterCommandHandler(IUserRepository userRepository, IUnitOfWork unitOfWork, IPasswordHasher passwordHasher)
     {
         _userRepository = userRepository;
@@ -29,6 +38,12 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Re
         _passwordHasher = passwordHasher;
     }
 
+    /// <summary>
+    /// Зарегистрировать пользователя и сохранить в БД
+    /// </summary>
+    /// <param name="request">Данные регистрации</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Id созданного пользователя или ошибка EmailAlreadyExists</returns>
     public async Task<Result<RegisterResponse>> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
         var existingUser = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
@@ -46,14 +61,23 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Re
     }
 }
 
+/// <summary>
+/// Команда входа пользователя в систему
+/// </summary>
 public record LoginCommand(string Email, string Password) : IRequest<Result<LoginResponse>>;
 
+/// <summary>
+/// Обработчик команды <see cref="LoginCommand"/>
+/// </summary>
 public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginResponse>>
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenService _jwtTokenService;
 
+    /// <param name="userRepository">Репозиторий пользователей</param>
+    /// <param name="passwordHasher">Сервис проверки паролей</param>
+    /// <param name="jwtTokenService">Сервис генерации JWT</param>
     public LoginCommandHandler(IUserRepository userRepository, IPasswordHasher passwordHasher, IJwtTokenService jwtTokenService)
     {
         _userRepository = userRepository;
@@ -61,6 +85,12 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
         _jwtTokenService = jwtTokenService;
     }
 
+    /// <summary>
+    /// Аутентифицировать пользователя и вернуть JWT-токен
+    /// </summary>
+    /// <param name="request">Учётные данные</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>JWT-токен или ошибка InvalidCredentials</returns>
     public async Task<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);

@@ -10,6 +10,9 @@ using TuranLogix.Domain.Interfaces;
 
 namespace TuranLogix.Application.Features.Orders.Commands;
 
+/// <summary>
+/// Команда создания новой заявки на перевозку
+/// </summary>
 public record CreateOrderCommand(
     string OriginCity,
     string DestinationCity,
@@ -20,6 +23,9 @@ public record CreateOrderCommand(
     DateTime PickupDate,
     string? Comment) : IRequest<Result<int>>;
 
+/// <summary>
+/// Обработчик команды <see cref="CreateOrderCommand"/>
+/// </summary>
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Result<int>>
 {
     private readonly IOrderRepository _orderRepository;
@@ -29,6 +35,12 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
     private readonly IMediator _mediator;
     private readonly ILogger<CreateOrderCommandHandler> _logger;
 
+    /// <param name="orderRepository">Репозиторий заявок</param>
+    /// <param name="unitOfWork">Единица работы</param>
+    /// <param name="currentUserService">Сервис текущего пользователя</param>
+    /// <param name="mapboxService">Сервис геокодирования Mapbox</param>
+    /// <param name="mediator">MediatR для публикации событий</param>
+    /// <param name="logger">Логгер</param>
     public CreateOrderCommandHandler(
         IOrderRepository orderRepository,
         IUnitOfWork unitOfWork,
@@ -45,6 +57,12 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
         _logger = logger;
     }
 
+    /// <summary>
+    /// Создать заявку, обогатить координатами и сохранить в БД
+    /// </summary>
+    /// <param name="request">Данные заявки</param>
+    /// <param name="cancellationToken">Токен отмены</param>
+    /// <returns>Id созданной заявки</returns>
     public async Task<Result<int>> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
         var clientId = _currentUserService.UserId!.Value;

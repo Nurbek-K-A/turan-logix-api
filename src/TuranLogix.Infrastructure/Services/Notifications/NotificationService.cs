@@ -9,12 +9,18 @@ using TuranLogix.Domain.Enums;
 
 namespace TuranLogix.Infrastructure.Services.Notifications;
 
+/// <summary>
+/// Отправляет уведомления через Telegram Bot API и SMTP Email
+/// </summary>
 public class NotificationService : INotificationService
 {
     private readonly ITelegramBotClient _botClient;
     private readonly IConfiguration _configuration;
     private readonly ILogger<NotificationService> _logger;
 
+    /// <param name="botClient">Telegram Bot клиент</param>
+    /// <param name="configuration">Конфигурация (Telegram:ManagerChatId, Email:*)</param>
+    /// <param name="logger">Логгер</param>
     public NotificationService(
         ITelegramBotClient botClient,
         IConfiguration configuration,
@@ -25,6 +31,7 @@ public class NotificationService : INotificationService
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task SendAsync(string recipient, string message, NotificationChannel channel, CancellationToken cancellationToken = default)
     {
         switch (channel)
@@ -41,6 +48,12 @@ public class NotificationService : INotificationService
         }
     }
 
+    /// <summary>
+    /// Отправить сообщение в Telegram
+    /// </summary>
+    /// <param name="chatId">Telegram chat_id получателя (пустая строка — менеджерский чат из конфигурации)</param>
+    /// <param name="message">Текст сообщения</param>
+    /// <param name="cancellationToken">Токен отмены</param>
     private async Task SendTelegramAsync(string chatId, string message, CancellationToken cancellationToken)
     {
         try
@@ -66,6 +79,12 @@ public class NotificationService : INotificationService
         }
     }
 
+    /// <summary>
+    /// Отправить уведомление по электронной почте через SMTP
+    /// </summary>
+    /// <param name="toEmail">Email получателя</param>
+    /// <param name="message">Текст письма</param>
+    /// <param name="cancellationToken">Токен отмены</param>
     private async Task SendEmailAsync(string toEmail, string message, CancellationToken cancellationToken)
     {
         var smtpHost = _configuration["Email:SmtpHost"];

@@ -9,6 +9,9 @@ using TuranLogix.Domain.Interfaces;
 
 namespace TuranLogix.Infrastructure.Services.Ai;
 
+/// <summary>
+/// AI-чат ассистент TuranLogix на базе Claude (Anthropic API)
+/// </summary>
 public class ClaudeAiChatService : IAiChatService
 {
     private readonly AnthropicClient _client;
@@ -32,6 +35,9 @@ public class ClaudeAiChatService : IAiChatService
         Если вопрос выходит за рамки логистики, вежливо перенаправьте пользователя к основной теме.
         """;
 
+    /// <param name="configuration">Конфигурация (Anthropic:ApiKey)</param>
+    /// <param name="chatMessageRepository">Репозиторий сообщений для передачи истории диалога</param>
+    /// <param name="logger">Логгер</param>
     public ClaudeAiChatService(
         IConfiguration configuration,
         IChatMessageRepository chatMessageRepository,
@@ -42,6 +48,8 @@ public class ClaudeAiChatService : IAiChatService
         _logger = logger;
     }
 
+    /// <inheritdoc/>
+    /// <remarks>При ошибке API возвращает заглушку вместо выброса исключения</remarks>
     public async Task<string> SendMessageAsync(int sessionId, string userMessage, CancellationToken cancellationToken = default)
     {
         try
