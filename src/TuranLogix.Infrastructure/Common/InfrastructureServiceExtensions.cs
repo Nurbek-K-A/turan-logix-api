@@ -33,7 +33,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IFileStorageService, BlobStorageService>();
         services.AddScoped<ISignatureService, NcaLayerSignatureService>();
         services.AddScoped<IAiChatService, ClaudeAiChatService>();
-        services.AddScoped<INotificationService, TelegramNotificationService>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         var botToken = configuration["Telegram:BotToken"] ?? string.Empty;
         if (!string.IsNullOrEmpty(botToken))

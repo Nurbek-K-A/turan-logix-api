@@ -9,16 +9,16 @@ using TuranLogix.Domain.Enums;
 
 namespace TuranLogix.Infrastructure.Services.Notifications;
 
-public class TelegramNotificationService : INotificationService
+public class NotificationService : INotificationService
 {
     private readonly ITelegramBotClient _botClient;
     private readonly IConfiguration _configuration;
-    private readonly ILogger<TelegramNotificationService> _logger;
+    private readonly ILogger<NotificationService> _logger;
 
-    public TelegramNotificationService(
+    public NotificationService(
         ITelegramBotClient botClient,
         IConfiguration configuration,
-        ILogger<TelegramNotificationService> logger)
+        ILogger<NotificationService> logger)
     {
         _botClient = botClient;
         _configuration = configuration;
